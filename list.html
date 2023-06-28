@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script>
+    function printList(page) {
+      const $tbody = $("#list tbody");
+      for(c of page.contacts) {
+        const html = `
+          <tr>
+            <td>${c.no}</td>
+            <td><a href='read.html?no="+${c.no}'>${c.name}</a></td>
+            <td>${c.tel}</td>
+            <td>${c.address}</td>
+          </tr>
+        `;
+        $tbody.append(html);
+      }
+    }
+
+    function getPagination({pageno, pagesize, totalcount}) {
+      const blockSize = 5;
+      const countOfPage = Math.floor((totalcount-1)/pagesize)+1;
+      const prev = Math.floor((pageno-1)/blockSize)*blockSize;
+      const start = prev + 1;
+      let end = prev + blockSize;
+      let next = end + 1;
+      if (end >= countOfPage) {
+          end = countOfPage;
+          next = 0;
+      }
+      return {pageno, prev, start, end, next}
+    }
+
+    function printPagination(p) {
+      const $pagination = $("#pagination ul");
+      if(p.prev>0) {
+        const html =`
+          <li class='page-item'>
+            <a class='page-link' href='list.html?pageno=${p.prev}'>이전으로</a>
+          </li>`;
+        $pagination.append(html);
+      }
+      for(var i=p.start; i<=p.end; i++) {
+        const className = p.pageno===i? 'page-item active' : 'page-item';
+        const html =`
+          <li class='${className}'>
+            <a class='page-link' href='list.html?pageno=${i}'>${i}</a>
+          </li>`;
+        $pagination.append(html);  
+      }
+      if(p.next>0) {
+        const html =`
+          <li class='page-item'>
+            <a class='page-link' href='list.html?pageno=${p.next}'>다음으로</a>
+          </li>`;
+        $pagination.append(html);
+      }
+    }
+
+    $(document).ready(async function() {
+      let pageno = new URLSearchParams(location.search).get('pageno');
+      if(pageno===null)
+        pageno = 1;
+      try {
+        const page = await $.ajax(`http://sample.bmaster.kro.kr/contacts?pageno=${pageno}&pagesize=10`);
+        printList(page);
+        const pagination = getPagination(page);
+        printPagination(pagination);
+      } catch(err) {
+        console.log(err);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="page">
+    <main>
+      <aside></aside>
+      <section>
+        <div id="list">
+          <table class="table table-border">
+            <thead>
+              <tr>
+                <th>번호</th>
+                <th>이름</th>
+                <th>전화</th>
+                <th>주소</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination" style="display:flex; justify-content: center;">
+          <ul class="pagination">
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
